@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Motivation Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #0E0E0E; --surface: #141414; --surface2: #111;
+    --border: #222; --border2: #1E1E1E;
+    --text: #F0EDE6; --muted: #666; --dim: #444; --dimmer: #2A2A2A;
+    --c-bg: #3B9E8A; --c-act: #E84B2E; --c-rew: #D4A017;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh; padding: 32px 18px 100px;
+    -webkit-text-size-adjust: 100%;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif; font-style: italic;
+    font-weight: 400; font-size: 28px; letter-spacing: -0.01em;
+  }
+  .meta { font-size: 11px; color: var(--dim); letter-spacing: 0.04em; margin-top: 4px; margin-bottom: 24px; }
+
+  .setup-panel { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 18px; margin-bottom: 20px; }
+  .setup-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--dim); margin-bottom: 8px; }
+  .task-input {
+    background: #181818; border: 1px solid #2E2E2E; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 15px;
+    padding: 12px 14px; border-radius: 3px; outline: none;
+    width: 100%; -webkit-appearance: none; margin-bottom: 14px;
+  }
+  .task-input:focus { border-color: #555; }
+  .task-input::placeholder { color: #383838; }
+
+  .size-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .size-btn {
+    flex: 1; padding: 10px 0; background: none;
+    border: 1px solid #2A2A2A; color: var(--muted);
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; border-radius: 3px; transition: all 0.12s;
+  }
+  .size-btn.active-S { border-color: #5BAD72; color: #5BAD72; background: #0D1A10; }
+  .size-btn.active-M { border-color: #D4A017; color: #D4A017; background: #1A1400; }
+  .size-btn.active-L { border-color: #E84B2E; color: #E84B2E; background: #1A0A08; }
+
+  .meeting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .meeting-label { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+  .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; display: inline-block; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track { position: absolute; inset: 0; background: #2A2A2A; border-radius: 12px; transition: background 0.2s; }
+  .toggle input:checked + .toggle-track { background: #3B9E8A; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #888; border-radius: 50%; transition: transform 0.2s, background 0.2s; pointer-events: none; }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); background: #fff; }
+
+  .setup-btn {
+    background: var(--text); color: var(--bg); border: none;
+    padding: 14px 0; width: 100%;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; border-radius: 3px; font-weight: 500;
+  }
+  .setup-btn:active { transform: scale(0.98); }
+  .setup-btn.dimmed { opacity: 0.4; }
+
+  .session-result {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 16px 18px; margin-bottom: 20px;
+    display: none; flex-direction: column; gap: 12px;
+  }
+  .session-result.visible { display: flex; }
+  .session-task-name { font-size: 10px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid var(--border2); }
+  .session-task-name span { color: var(--text); font-style: italic; }
+  .result-card { border-radius: 3px; padding: 12px 14px; border: 1px solid; }
+  .result-card-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 6px; opacity: 0.8; }
+  .result-card-text { font-size: 13px; line-height: 1.5; color: var(--text); }
+  .pick-again-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 10px; border-radius: 2px; cursor: pointer; width: 100%;
+  }
+  .pick-again-btn:active { border-color: #555; color: #CCC; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border2); margin-bottom: 20px; }
+  .tab {
+    flex: 1; padding: 11px 8px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    cursor: pointer; background: none; border: none; color: var(--dim);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    text-align: center; transition: color 0.12s, border-color 0.12s;
+  }
+  .tab.active-bg  { color: var(--c-bg);  border-bottom-color: var(--c-bg); }
+  .tab.active-act { color: var(--c-act); border-bottom-color: var(--c-act); }
+  .tab.active-rew { color: var(--c-rew); border-bottom-color: var(--c-rew); }
+
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .cat-pill {
+    padding: 5px 11px; border-radius: 2px; font-size: 10px;
+    letter-spacing: 0.07em; cursor: pointer; border: 1px solid transparent;
+    text-transform: uppercase; font-family: 'DM Mono', monospace;
+    background: none; opacity: 0.32; transition: opacity 0.12s;
+  }
+  .cat-pill.active { opacity: 1; border-color: currentColor; }
+
+  .rand-strip { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+  .rand-sub { font-size: 11px; color: #555; }
+  .spin-btn {
+    background: #1E1E1E; color: #AAA; border: 1px solid #2E2E2E;
+    padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; border-radius: 2px; white-space: nowrap;
+  }
+  .spin-btn:active { background: #282828; }
+  .spin-btn:disabled { opacity: 0.35; }
+
+  .tactics-list { display: flex; flex-direction: column; gap: 7px; }
+  .tactic-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 3px; padding: 12px 13px;
+    transition: border-color 0.13s, background 0.13s;
+  }
+  .tactic-card.highlighted { background: #191919; border-color: var(--cc); box-shadow: 0 0 0 1px var(--cc-faint); }
+  .tactic-card.flash { background: #1D1D1D; border-color: #3A3A3A; }
+  .card-inner { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .card-left { display: flex; align-items: flex-start; gap: 9px; flex: 1; min-width: 0; }
+  .cat-icon { font-size: 12px; margin-top: 2px; flex-shrink: 0; }
+  .tactic-text { font-size: 13px; line-height: 1.5; color: #BCBCBC; word-break: break-word; }
+  .tactic-card.highlighted .tactic-text { color: var(--text); }
+  .size-tags { display: flex; gap: 4px; margin-top: 5px; flex-wrap: wrap; }
+  .size-tag {
+    font-size: 9px; padding: 2px 5px; border-radius: 2px;
+    letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid;
+  }
+  .size-tag.S { color: #5BAD72; border-color: #5BAD7244; background: #0D1A1044; }
+  .size-tag.M { color: #D4A017; border-color: #D4A01744; background: #1A140044; }
+  .size-tag.L { color: #E84B2E; border-color: #E84B2E44; background: #1A0A0844; }
+  .chosen-badge { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; margin-left: 6px; color: var(--cc); }
+  .card-actions { display: flex; gap: 5px; flex-shrink: 0; padding-top: 1px; }
+  .icon-btn {
+    background: none; border: 1px solid #252525; color: #555;
+    cursor: pointer; border-radius: 2px; font-size: 10px;
+    padding: 5px 9px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; min-height: 30px;
+  }
+  .icon-btn:active { border-color: #555; color: #CCC; }
+  .icon-btn.del:active { border-color: #722; color: #E44; }
+
+  .add-btn {
+    background: none; border: 1px dashed #2A2A2A; color: #555;
+    cursor: pointer; padding: 13px 16px; font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.09em; border-radius: 3px;
+    text-transform: uppercase; width: 100%; text-align: left; min-height: 46px;
+  }
+  .add-form {
+    background: var(--surface); border: 1px dashed #2E2E2E;
+    border-radius: 3px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  input[type=text], select {
+    background: #181818; border: 1px solid #2E2E2E; color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 14px;
+    padding: 11px 12px; border-radius: 2px; outline: none;
+    width: 100%; -webkit-appearance: none;
+  }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  select { flex: 1; min-width: 120px; width: auto; }
+  .size-check-row { display: flex; gap: 10px; align-items: center; }
+  .size-check-label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .size-checks { display: flex; gap: 10px; }
+  .size-check { display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer; }
+  .size-check input { width: auto; padding: 0; margin: 0; accent-color: var(--c-rew); }
+
+  .section-divider {
+    font-size: 10px; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; margin: 24px 0 10px;
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+  .resting-card {
+    background: var(--surface); border: 1px solid #1C1C1C; border-radius: 3px;
+    padding: 10px 13px; opacity: 0.38; display: flex;
+    align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px;
+  }
+  .resting-left { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+  .resting-text { font-size: 12px; color: #777; font-style: italic; word-break: break-word; }
+
+  .footer { margin-top: 40px; display: flex; justify-content: flex-end; }
+  .reset-btn {
+    background: none; border: none; color: #2A2A2A;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; padding: 8px 0;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div style="max-width:640px;margin:0 auto;">
+
+  <div style="margin-bottom:22px;">
+    <h1>Motivation Menu</h1>
+    <p class="meta" id="meta-line">loading...</p>
+  </div>
+
+  <!-- Task Setup -->
+  <div class="setup-panel">
+    <div class="setup-label">What are you working on?</div>
+    <input type="text" class="task-input" id="task-name" placeholder="Name the task..." oninput="onTaskInput()">
+    <div class="setup-label">How big is it?</div>
+    <div class="size-row">
+      <button class="size-btn" id="sz-S" onclick="setSize('S')">S — Small</button>
+      <button class="size-btn" id="sz-M" onclick="setSize('M')">M — Medium</button>
+      <button class="size-btn" id="sz-L" onclick="setSize('L')">L — Large</button>
+    </div>
+    <div class="meeting-row">
+      <span class="meeting-label">This is a meeting</span>
+      <label class="toggle">
+        <input type="checkbox" id="meeting-toggle" onchange="renderSetupBtn()">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <button class="setup-btn dimmed" id="setup-btn" onclick="setupSession()">✦ Set me up</button>
+  </div>
+
+  <!-- Session Result -->
+  <div class="session-result" id="session-result">
+    <div class="session-task-name" id="result-task-name"></div>
+    <div class="result-card" style="border-color:#3B9E8A33;background:#0A1512;">
+      <div class="result-card-label" id="bg-result-label" style="color:#3B9E8A;">▶ Background while you work</div>
+      <div class="result-card-text" id="bg-result-text"></div>
+    </div>
+    <div class="result-card" style="border-color:#E84B2E33;background:#180D0A;">
+      <div class="result-card-label" style="color:#E84B2E;">⚡ Activation</div>
+      <div class="result-card-text" id="act-result-text"></div>
+    </div>
+    <div class="result-card" style="border-color:#D4A01733;background:#18140A;">
+      <div class="result-card-label" style="color:#D4A017;">✦ Reward on the other side</div>
+      <div class="result-card-text" id="rew-result-text"></div>
+    </div>
+    <button class="pick-again-btn" onclick="setupSession()">↯ Pick again</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active-bg"  id="tab-background" onclick="switchTab('background')">Background</button>
+    <button class="tab"            id="tab-activation"  onclick="switchTab('activation')">Activation</button>
+    <button class="tab"            id="tab-reward"      onclick="switchTab('reward')">Reward</button>
+  </div>
+
+  <!-- Background -->
+  <div id="section-background">
+    <div class="filter-row" id="bg-filters">
+      <button class="cat-pill active" style="color:#F0EDE6" data-cat="all"     onclick="setCat('background','all')">All</button>
+      <button class="cat-pill" style="color:#7B5EA7" data-cat="audio"          onclick="setCat('background','audio')">Audio</button>
+      <button class="cat-pill" style="color:#3B9E8A" data-cat="visual"         onclick="setCat('background','visual')">Visual</button>
+      <button class="cat-pill" style="color:#C2692A" data-cat="sensory"        onclick="setCat('background','sensory')">Sensory</button>
+      <button class="cat-pill" style="color:#9E6B3B" data-cat="meeting"        onclick="setCat('background','meeting')">Meeting</button>
+    </div>
+    <div class="rand-strip">
+      <span class="rand-sub" id="bg-rand-sub"></span>
+      <button class="spin-btn" id="bg-spin-btn" onclick="randomizeSingle('background')">↯ Randomize</button>
+    </div>
+    <div class="tactics-list" id="background-list"></div>
+    <div id="background-resting-section" class="hidden">
+      <div class="section-divider" onclick="toggleResting('background')">
+        <span id="background-resting-label">Resting (0)</span>
+        <span id="background-resting-arrow" style="color:#333;">▼</span>
+      </div>
+      <div id="background-resting-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- Activation -->
+  <div id="section-activation" class="hidden">
+    <div class="filter-row" id="act-filters">
+      <button class="cat-pill active" style="color:#F0EDE6" data-cat="all"      onclick="setCat('activation','all')">All</button>
+      <button class="cat-pill" style="color:#E84B2E" data-cat="ignition"        onclick="setCat('activation','ignition')">Ignition</button>
+      <button class="cat-pill" style="color:#2D6B4F" data-cat="stakes"          onclick="setCat('activation','stakes')">Stakes</button>
+      <button class="cat-pill" style="color:#3B5FAD" data-cat="novelty"         onclick="setCat('activation','novelty')">Novelty</button>
+    </div>
+    <div class="rand-strip">
+      <span class="rand-sub" id="act-rand-sub"></span>
+      <button class="spin-btn" id="act-spin-btn" onclick="randomizeSingle('activation')">↯ Randomize</button>
+    </div>
+    <div class="tactics-list" id="activation-list"></div>
+    <div id="activation-resting-section" class="hidden">
+      <div class="section-divider" onclick="toggleResting('activation')">
+        <span id="activation-resting-label">Resting (0)</span>
+        <span id="activation-resting-arrow" style="color:#333;">▼</span>
+      </div>
+      <div id="activation-resting-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- Reward -->
+  <div id="section-reward" class="hidden">
+    <div class="filter-row" id="rew-filters">
+      <button class="cat-pill active" style="color:#F0EDE6" data-cat="all"      onclick="setCat('reward','all')">All</button>
+      <button class="cat-pill" style="color:#D4A017" data-cat="interests"       onclick="setCat('reward','interests')">Interests</button>
+      <button class="cat-pill" style="color:#9B59B6" data-cat="creative"        onclick="setCat('reward','creative')">Creative</button>
+      <button class="cat-pill" style="color:#E84B2E" data-cat="body"            onclick="setCat('reward','body')">Body</button>
+      <button class="cat-pill" style="color:#3B9E8A" data-cat="food"            onclick="setCat('reward','food')">Food</button>
+    </div>
+    <div class="rand-strip">
+      <span class="rand-sub" id="rew-rand-sub"></span>
+      <button class="spin-btn" id="rew-spin-btn" onclick="randomizeSingle('reward')">↯ Randomize</button>
+    </div>
+    <div class="tactics-list" id="reward-list"></div>
+    <div id="reward-resting-section" class="hidden">
+      <div class="section-divider" onclick="toggleResting('reward')">
+        <span id="reward-resting-label">Resting (0)</span>
+        <span id="reward-resting-arrow" style="color:#333;">▼</span>
+      </div>
+      <div id="reward-resting-list" class="hidden"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="reset-btn" onclick="resetDefaults()">reset to defaults</button>
+  </div>
+</div>
+
+<script>
+const SECTION_CATS = {
+  background: {
+    audio:   { label:"Audio",   icon:"♫", color:"#7B5EA7" },
+    visual:  { label:"Visual",  icon:"◉", color:"#3B9E8A" },
+    sensory: { label:"Sensory", icon:"✿", color:"#C2692A" },
+    meeting: { label:"Meeting", icon:"◆", color:"#9E6B3B" },
+  },
+  activation: {
+    ignition: { label:"Ignition", icon:"⚡", color:"#E84B2E" },
+    stakes:   { label:"Stakes",   icon:"◈",  color:"#2D6B4F" },
+    novelty:  { label:"Novelty",  icon:"◎",  color:"#3B5FAD" },
+  },
+  reward: {
+    interests: { label:"Interests", icon:"✦", color:"#D4A017" },
+    creative:  { label:"Creative",  icon:"✎", color:"#9B59B6" },
+    body:      { label:"Body",      icon:"↑", color:"#E84B2E" },
+    food:      { label:"Food",      icon:"◍", color:"#3B9E8A" },
+  },
+};
+
+const BG_DEFAULTS = [
+  { id:101, cat:"audio",   text:"Game OST — something you know by heart (Skyrim, BG3, Expedition 33)", sizes:["S","M","L"], rest:0 },
+  { id:102, cat:"audio",   text:"Brown noise or rain — no melody, just texture", sizes:["S","M","L"], rest:0 },
+  { id:103, cat:"audio",   text:"Lo-fi beats — familiar enough to ignore", sizes:["S","M"], rest:0 },
+  { id:104, cat:"audio",   text:"EPCOT World Showcase ambient audio loop", sizes:["S","M","L"], rest:0 },
+  { id:105, cat:"audio",   text:"Clone Wars or Star Wars score — orchestral, no lyrics", sizes:["M","L"], rest:0 },
+  { id:106, cat:"audio",   text:"X-Files score — eerie, low-key, great focus music", sizes:["M","L"], rest:0 },
+  { id:107, cat:"audio",   text:"Soviet-era film score or classical — Shostakovich, Prokofiev", sizes:["M","L"], rest:0 },
+  { id:108, cat:"audio",   text:"Stardew Valley or Animal Crossing OST — cozy, zero stakes", sizes:["S","M"], rest:0 },
+  { id:109, cat:"audio",   text:"Spirit City Lofi — cozy lo-fi with ambient game visuals", sizes:["S","M","L"], rest:0 },
+  { id:110, cat:"audio",   text:"Complete silence — when everything else is too much", sizes:["L"], rest:0 },
+  { id:111, cat:"visual",  text:"EPCOT ambient loop on a second screen — park footage, no commentary", sizes:["S","M","L"], rest:0 },
+  { id:112, cat:"visual",  text:"X-Files or Clone Wars as background TV — seen it enough to tune out", sizes:["S","M"], rest:0 },
+  { id:113, cat:"visual",  text:"Fireplace or rain window video — purely atmospheric", sizes:["S","M","L"], rest:0 },
+  { id:114, cat:"visual",  text:"Only Murders in the Building playing quietly in the background", sizes:["S","M"], rest:0 },
+  { id:115, cat:"visual",  text:"Disney theme park livestream or loop — ambient crowd energy", sizes:["S","M","L"], rest:0 },
+  { id:116, cat:"visual",  text:"No-commentary cozy game footage (Stardew walk, Skyrim landscapes)", sizes:["S","M"], rest:0 },
+  { id:117, cat:"sensory", text:"Candle with a specific scent anchored to focus work", sizes:["S","M","L"], rest:0 },
+  { id:118, cat:"sensory", text:"A specific mug or drink that signals 'work mode'", sizes:["S","M","L"], rest:0 },
+  { id:119, cat:"sensory", text:"Weighted blanket or a specific texture item nearby", sizes:["M","L"], rest:0 },
+  { id:120, cat:"sensory", text:"Specific hoodie or 'work outfit' that signals the shift", sizes:["M","L"], rest:0 },
+  { id:121, cat:"sensory", text:"Cool room temperature — slightly cold = alert", sizes:["M","L"], rest:0 },
+  { id:122, cat:"sensory", text:"Headphones on, even with nothing playing — signals closed mode", sizes:["S","M","L"], rest:0 },
+  { id:123, cat:"meeting", text:"Put on your 'on' item — the thing that signals you're performing, not just existing", sizes:["S","M","L"], rest:0 },
+  { id:124, cat:"meeting", text:"One minute of stillness before joining — arrive as yourself, not as your to-do list", sizes:["S","M","L"], rest:0 },
+  { id:125, cat:"meeting", text:"Frame it: you're the Scoundrel in this room. Strategic presence, not full investment.", sizes:["M","L"], rest:0 },
+  { id:126, cat:"meeting", text:"Review your one goal for the meeting — just one", sizes:["S","M","L"], rest:0 },
+  { id:127, cat:"meeting", text:"Treat it like a character study — observe, don't absorb", sizes:["M","L"], rest:0 },
+  { id:128, cat:"meeting", text:"Five deep breaths before unmuting or entering the room", sizes:["S","M","L"], rest:0 },
+  { id:129, cat:"meeting", text:"Comfort drink in hand before the call starts — grounding object", sizes:["S","M","L"], rest:0 },
+];
+
+const ACT_DEFAULTS = [
+  { id:201, cat:"ignition", text:"Put shoes on. That's the only task.", sizes:["L"], rest:0 },
+  { id:202, cat:"ignition", text:"Cold water on face and wrists", sizes:["M","L"], rest:0 },
+  { id:203, cat:"ignition", text:"5 minutes of movement — any movement counts", sizes:["M","L"], rest:0 },
+  { id:204, cat:"ignition", text:"Open the doc. Don't write yet. Just open it.", sizes:["L"], rest:0 },
+  { id:205, cat:"ignition", text:"Set a 10-minute timer. You only have to do 10 minutes.", sizes:["M","L"], rest:0 },
+  { id:206, cat:"ignition", text:"Name the smallest possible next action out loud", sizes:["S","M","L"], rest:0 },
+  { id:207, cat:"ignition", text:"Change your physical position dramatically before starting", sizes:["M","L"], rest:0 },
+  { id:208, cat:"ignition", text:"Walk around the block — come back and start", sizes:["L"], rest:0 },
+  { id:209, cat:"ignition", text:"Gym first. Everything else is second.", sizes:["L"], rest:0 },
+  { id:210, cat:"stakes",   text:"Text one person what you're doing in the next 30 minutes", sizes:["M","L"], rest:0 },
+  { id:211, cat:"stakes",   text:"Write the deadline somewhere visible — make it feel real", sizes:["M","L"], rest:0 },
+  { id:212, cat:"stakes",   text:"Work where someone can see you (café, common area)", sizes:["M","L"], rest:0 },
+  { id:213, cat:"stakes",   text:"Name the cost of not doing this — out loud or in writing", sizes:["L"], rest:0 },
+  { id:214, cat:"stakes",   text:"Commit to a check-in at a specific time", sizes:["S","M","L"], rest:0 },
+  { id:215, cat:"novelty",  text:"Change location entirely — even just a different room", sizes:["M","L"], rest:0 },
+  { id:216, cat:"novelty",  text:"Work in a completely different order than usual", sizes:["S","M"], rest:0 },
+  { id:217, cat:"novelty",  text:"Use a different tool than normal (paper, whiteboard, voice notes)", sizes:["S","M","L"], rest:0 },
+  { id:218, cat:"novelty",  text:"One tab only. Phone in another room. Weird constraint = fresh brain.", sizes:["M","L"], rest:0 },
+  { id:219, cat:"novelty",  text:"Dress differently than you would normally for this task", sizes:["M","L"], rest:0 },
+];
+
+const REW_DEFAULTS = [
+  { id:301, cat:"interests", text:"EPCOT deep-dive: vintage park footage or 1989–1995 era content", sizes:["M","L"], rest:0 },
+  { id:302, cat:"interests", text:"Skyrim session — no guilt, full commitment", sizes:["L"], rest:0 },
+  { id:303, cat:"interests", text:"Baldur's Gate 3: one encounter, no time limit pressure", sizes:["M","L"], rest:0 },
+  { id:304, cat:"interests", text:"Clair Obscur: Expedition 33 — one session, no stopping guilt", sizes:["M","L"], rest:0 },
+  { id:305, cat:"interests", text:"Soviet history rabbit hole — documentary, article, or wiki spiral", sizes:["M","L"], rest:0 },
+  { id:306, cat:"interests", text:"Chernobyl or disaster content — podcast, doc, or longform read", sizes:["M","L"], rest:0 },
+  { id:307, cat:"interests", text:"Shipwreck or mountaineering accident deep-dive", sizes:["S","M"], rest:0 },
+  { id:308, cat:"interests", text:"Star Wars: episode, Clone Wars arc, or lore deep-dive", sizes:["M","L"], rest:0 },
+  { id:309, cat:"interests", text:"X-Files: one standalone monster-of-the-week episode", sizes:["M","L"], rest:0 },
+  { id:310, cat:"interests", text:"Disney: theme park history, Imagineering doc, or park-day planning fantasy", sizes:["S","M","L"], rest:0 },
+  { id:311, cat:"interests", text:"Only Murders in the Building — one episode as a full wind-down", sizes:["M","L"], rest:0 },
+  { id:312, cat:"interests", text:"Nancy Drew: one mystery session, cozy and unhurried", sizes:["S","M"], rest:0 },
+  { id:313, cat:"interests", text:"Narrative theory rabbit hole — archetypes, story structure, comparative analysis", sizes:["S","M"], rest:0 },
+  { id:314, cat:"creative",  text:"Novel writing sprint — 20 minutes, no editing, just forward motion", sizes:["S","M"], rest:0 },
+  { id:315, cat:"creative",  text:"Writing theory: one essay or chapter on craft or structure", sizes:["S","M"], rest:0 },
+  { id:316, cat:"creative",  text:"Worldbuilding session — no output goal, just explore", sizes:["M","L"], rest:0 },
+  { id:317, cat:"body",      text:"Guilt-free rest — horizontal, eyes closed, no phone", sizes:["L"], rest:0 },
+  { id:318, cat:"body",      text:"Walk with no destination and no podcast", sizes:["M","L"], rest:0 },
+  { id:319, cat:"body",      text:"Coffee or tea as a ritual close — the work is done", sizes:["S","M","L"], rest:0 },
+  { id:320, cat:"food",      text:"Themed meal: pick a universe, cook to match", sizes:["L"], rest:0 },
+  { id:321, cat:"food",      text:"Specific snack you only get as a reward — name it before you start", sizes:["S","M"], rest:0 },
+  { id:322, cat:"food",      text:"Order from somewhere you've been saving — earned it", sizes:["L"], rest:0 },
+];
+
+const REST_THRESHOLD = 2;
+let data = { background:[], activation:[], reward:[] };
+let cats = { background:"all", activation:"all", reward:"all" };
+let hl   = { background:null, activation:null, reward:null };
+let restVisible = { background:false, activation:false, reward:false };
+let taskName = "", taskSize = null, isMeeting = false;
+let spinIntervals = {};
+
+function load() {
+  try {
+    data.background = JSON.parse(localStorage.getItem("mm3-bg"))  || JSON.parse(JSON.stringify(BG_DEFAULTS));
+    data.activation = JSON.parse(localStorage.getItem("mm3-act")) || JSON.parse(JSON.stringify(ACT_DEFAULTS));
+    data.reward     = JSON.parse(localStorage.getItem("mm3-rew")) || JSON.parse(JSON.stringify(REW_DEFAULTS));
+  } catch {
+    data.background = JSON.parse(JSON.stringify(BG_DEFAULTS));
+    data.activation = JSON.parse(JSON.stringify(ACT_DEFAULTS));
+    data.reward     = JSON.parse(JSON.stringify(REW_DEFAULTS));
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem("mm3-bg",  JSON.stringify(data.background));
+    localStorage.setItem("mm3-act", JSON.stringify(data.activation));
+    localStorage.setItem("mm3-rew", JSON.stringify(data.reward));
+  } catch {}
+}
+
+function activeOf(sec)   { return data[sec].filter(t => t.rest < REST_THRESHOLD); }
+function restingOf(sec)  { return data[sec].filter(t => t.rest >= REST_THRESHOLD); }
+function filteredOf(sec) {
+  const a = activeOf(sec);
+  return cats[sec] === "all" ? a : a.filter(t => t.cat === cats[sec]);
+}
+
+function weightedPick(arr, size) {
+  if (!arr.length) return null;
+  if (!size) return arr[Math.floor(Math.random() * arr.length)];
+  const pool = [];
+  arr.forEach(t => {
+    const w = (t.sizes && t.sizes.includes(size)) ? 3 : 1;
+    for (let i = 0; i < w; i++) pool.push(t);
+  });
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function onTaskInput() {
+  taskName = document.getElementById('task-name').value.trim();
+  renderSetupBtn();
+}
+
+function setSize(s) {
+  taskSize = taskSize === s ? null : s;
+  ['S','M','L'].forEach(x => {
+    document.getElementById('sz-'+x).className = 'size-btn' + (taskSize === x ? ' active-'+x : '');
+  });
+  renderSetupBtn();
+}
+
+function renderSetupBtn() {
+  isMeeting = document.getElementById('meeting-toggle').checked;
+  document.getElementById('setup-btn').classList.toggle('dimmed', !taskName);
+}
+
+function setupSession() {
+  taskName  = document.getElementById('task-name').value.trim();
+  isMeeting = document.getElementById('meeting-toggle').checked;
+  if (!taskName) { document.getElementById('task-name').focus(); return; }
+
+  let bgPool = activeOf('background');
+  if (isMeeting) {
+    const mtg = bgPool.filter(t => t.cat === 'meeting');
+    bgPool = mtg.length ? mtg : bgPool;
+  } else {
+    bgPool = bgPool.filter(t => t.cat !== 'meeting');
+  }
+
+  const bg  = weightedPick(bgPool, taskSize);
+  const act = weightedPick(activeOf('activation'), taskSize);
+  const rew = weightedPick(activeOf('reward'), taskSize);
+  if (!bg || !act || !rew) return;
+
+  const sizeLabel = taskSize ? {S:" · small", M:" · medium", L:" · large"}[taskSize] : "";
+  const mtgLabel  = isMeeting ? " · meeting" : "";
+  document.getElementById('result-task-name').innerHTML =
+    'Session: <span>' + esc(taskName) + '</span><span style="color:#444">' + sizeLabel + mtgLabel + '</span>';
+  document.getElementById('bg-result-label').textContent  = isMeeting ? "◆ Pre-meeting ritual" : "▶ Background while you work";
+  document.getElementById('bg-result-text').textContent   = bg.text;
+  document.getElementById('act-result-text').textContent  = act.text;
+  document.getElementById('rew-result-text').textContent  = rew.text;
+  document.getElementById('session-result').classList.add('visible');
+  document.getElementById('session-result').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function switchTab(tab) {
+  ['background','activation','reward'].forEach(s => {
+    const tc = {background:'active-bg', activation:'active-act', reward:'active-rew'}[s];
+    document.getElementById('tab-'+s).className = 'tab' + (s === tab ? ' '+tc : '');
+    document.getElementById('section-'+s).classList.toggle('hidden', s !== tab);
+  });
+}
+
+function setCat(sec, cat) {
+  cats[sec] = cat;
+  const pid = {background:'bg', activation:'act', reward:'rew'}[sec];
+  document.querySelectorAll('#'+pid+'-filters .cat-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.cat === cat);
+  });
+  renderSection(sec);
+}
+
+function randomizeSingle(sec) {
+  const pool = filteredOf(sec);
+  if (!pool.length) return;
+  const pid = {background:'bg', activation:'act', reward:'rew'}[sec];
+  const btn = document.getElementById(pid+'-spin-btn');
+  btn.disabled = true; btn.textContent = "...";
+  hl[sec] = null;
+  if (spinIntervals[sec]) clearInterval(spinIntervals[sec]);
+  let count = 0;
+  spinIntervals[sec] = setInterval(() => {
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    renderListHTML(sec, r.id);
+    count++;
+    if (count >= 14) {
+      clearInterval(spinIntervals[sec]);
+      const final = weightedPick(pool, taskSize);
+      hl[sec]  = final.id;
+      cats[sec] = final.cat;
+      document.querySelectorAll('#'+pid+'-filters .cat-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.cat === final.cat);
+      });
+      renderSection(sec);
+      btn.disabled = false; btn.textContent = "↯ Randomize";
+      setTimeout(() => {
+        const el = document.getElementById('card-'+final.id);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+      }, 80);
+    }
+  }, 80);
+}
+
+function markRest(sec, id) {
+  data[sec] = data[sec].map(t => t.id===id ? {...t, rest:t.rest+1} : t);
+  if (hl[sec]===id) hl[sec]=null;
+  save(); renderSection(sec);
+}
+function restore(sec, id) {
+  data[sec] = data[sec].map(t => t.id===id ? {...t, rest:0} : t);
+  save(); renderSection(sec);
+}
+function deleteTactic(sec, id) {
+  data[sec] = data[sec].filter(t => t.id!==id);
+  if (hl[sec]===id) hl[sec]=null;
+  save(); renderSection(sec);
+}
+function toggleResting(sec) {
+  restVisible[sec] = !restVisible[sec];
+  document.getElementById(sec+'-resting-list').classList.toggle('hidden', !restVisible[sec]);
+  document.getElementById(sec+'-resting-arrow').textContent = restVisible[sec] ? '▲' : '▼';
+}
+function showAdd(sec) {
+  document.getElementById('add-btn-'+sec).classList.add('hidden');
+  document.getElementById('add-form-'+sec).classList.remove('hidden');
+  document.getElementById('new-text-'+sec).focus();
+}
+function hideAdd(sec) {
+  document.getElementById('add-btn-'+sec).classList.remove('hidden');
+  document.getElementById('add-form-'+sec).classList.add('hidden');
+  document.getElementById('new-text-'+sec).value = '';
+}
+function addTactic(sec) {
+  const text  = document.getElementById('new-text-'+sec).value.trim();
+  const cat   = document.getElementById('new-cat-'+sec).value;
+  const sizes = ['S','M','L'].filter(s => document.getElementById('new-sz-'+s+'-'+sec).checked);
+  if (!text) return;
+  data[sec].push({id:Date.now(), cat, text, sizes:sizes.length?sizes:['S','M','L'], rest:0});
+  save(); hideAdd(sec); renderSection(sec);
+}
+
+function getCatOptions(sec) {
+  return Object.entries(SECTION_CATS[sec]).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+}
+
+function renderListHTML(sec, flashId) {
+  const cfg    = SECTION_CATS[sec];
+  const items  = filteredOf(sec);
+  const hlId   = hl[sec];
+  const listEl = document.getElementById(sec+'-list');
+  let html = '';
+
+  if (!items.length) {
+    html = '<div style="padding:22px 0;text-align:center;color:#444;font-size:12px;letter-spacing:0.06em;">No active items here.</div>';
+  }
+
+  items.forEach(t => {
+    const c      = cfg[t.cat] || {icon:'·', color:'#888'};
+    const isHL   = hlId === t.id;
+    const isFlash= flashId === t.id;
+    const cls    = 'tactic-card'+(isHL?' highlighted':'')+(isFlash?' flash':'');
+    const stags  = (t.sizes||[]).map(s=>`<span class="size-tag ${s}">${s}</span>`).join('');
+    html += `<div class="${cls}" id="card-${t.id}" style="--cc:${c.color};--cc-faint:${c.color}22">
+      <div class="card-inner">
+        <div class="card-left">
+          <span class="cat-icon" style="color:${c.color}">${c.icon}</span>
+          <div style="min-width:0">
+            <div class="tactic-text">${esc(t.text)}</div>
+            <div class="size-tags">${stags}${isHL?'<span class="chosen-badge">← this one</span>':''}</div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn" onclick="markRest('${sec}',${t.id})">rest</button>
+          <button class="icon-btn del" onclick="deleteTactic('${sec}',${t.id})">×</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html += `
+    <button class="add-btn" id="add-btn-${sec}" onclick="showAdd('${sec}')">+ Add item</button>
+    <div class="add-form hidden" id="add-form-${sec}">
+      <input type="text" id="new-text-${sec}" placeholder="Describe it..."
+        onkeydown="if(event.key==='Enter')addTactic('${sec}');if(event.key==='Escape')hideAdd('${sec}');">
+      <div class="add-row"><select id="new-cat-${sec}">${getCatOptions(sec)}</select></div>
+      <div class="size-check-row">
+        <span class="size-check-label">Sizes:</span>
+        <div class="size-checks">
+          <label class="size-check"><input type="checkbox" id="new-sz-S-${sec}" checked> <span style="color:#5BAD72">S</span></label>
+          <label class="size-check"><input type="checkbox" id="new-sz-M-${sec}" checked> <span style="color:#D4A017">M</span></label>
+          <label class="size-check"><input type="checkbox" id="new-sz-L-${sec}" checked> <span style="color:#E84B2E">L</span></label>
+        </div>
+      </div>
+      <div class="add-row">
+        <button class="spin-btn" style="padding:10px 14px;" onclick="addTactic('${sec}')">Add</button>
+        <button class="icon-btn" onclick="hideAdd('${sec}')">Cancel</button>
+      </div>
+    </div>`;
+
+  listEl.innerHTML = html;
+}
+
+function renderSection(sec) {
+  const pid      = {background:'bg', activation:'act', reward:'rew'}[sec];
+  const cfg      = SECTION_CATS[sec];
+  const active   = activeOf(sec);
+  const resting  = restingOf(sec);
+  const filtered = filteredOf(sec);
+
+  document.getElementById(pid+'-rand-sub').textContent = cats[sec]==='all'
+    ? active.length+' active'
+    : filtered.length+' in '+(cfg[cats[sec]]?.label||cats[sec]);
+
+  renderListHTML(sec, null);
+
+  const restSec   = document.getElementById(sec+'-resting-section');
+  const restList  = document.getElementById(sec+'-resting-list');
+  const restLabel = document.getElementById(sec+'-resting-label');
+
+  if (resting.length > 0) {
+    restSec.classList.remove('hidden');
+    restLabel.textContent = 'Resting ('+resting.length+')';
+    let rhtml = '';
+    resting.forEach(t => {
+      const c = cfg[t.cat]||{icon:'·',color:'#888'};
+      rhtml += `<div class="resting-card">
+        <div class="resting-left">
+          <span style="color:${c.color};font-size:11px;flex-shrink:0">${c.icon}</span>
+          <span class="resting-text">${esc(t.text)}</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <button class="icon-btn" onclick="restore('${sec}',${t.id})">restore</button>
+          <button class="icon-btn del" onclick="deleteTactic('${sec}',${t.id})">×</button>
+        </div>
+      </div>`;
+    });
+    restList.innerHTML = rhtml;
+    restList.classList.toggle('hidden', !restVisible[sec]);
+  } else {
+    restSec.classList.add('hidden');
+  }
+
+  const ta = activeOf('background').length+activeOf('activation').length+activeOf('reward').length;
+  const tr = restingOf('background').length+restingOf('activation').length+restingOf('reward').length;
+  document.getElementById('meta-line').textContent = ta+' active · '+tr+' resting · rotate before they go stale';
+}
+
+function resetDefaults() {
+  if (!confirm("Reset everything to defaults?")) return;
+  data.background = JSON.parse(JSON.stringify(BG_DEFAULTS));
+  data.activation = JSON.parse(JSON.stringify(ACT_DEFAULTS));
+  data.reward     = JSON.parse(JSON.stringify(REW_DEFAULTS));
+  hl = {background:null, activation:null, reward:null};
+  save();
+  ['background','activation','reward'].forEach(renderSection);
+  document.getElementById('session-result').classList.remove('visible');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+load();
+['background','activation','reward'].forEach(renderSection);
+</script>
+</body>
+</html>
